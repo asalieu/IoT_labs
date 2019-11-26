@@ -35,15 +35,15 @@ var firebase = require('firebase');
 var thingy_id;
 
 var firebase_login = {
-    email : <Email>,
-    pass : <Password>
+    email : "ninja@mail.com",
+    pass : "ninjaguy"
 };
 
 var firebase_config = {
-  apiKey: <API KEY>,
-  authDomain: "<ID>.firebaseapp.com",
-  databaseURL: "https://<ID>.firebaseio.com",
-  storageBucket: "<ID>.appspot.com",
+  apiKey: "AIzaSyCvAvNVvQ8wB4fOn58XeWpOz_cv1pC9P5E",
+  authDomain: "hkriotlab.firebaseapp.com",
+  databaseURL: "https://hkriotlab.firebaseio.com",
+  storageBucket: "hkriotlab.appspot.com"
 };
 
 var database;
