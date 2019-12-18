@@ -30,72 +30,95 @@
  */
  
 var Thingy = require('../index');
-var enabled;
+var Twit = require('twit');
+var led_color = 1;
+var arg_consumer_key;
+var arg_consumer_secret;
+var arg_access_token;
+var arg_access_token_secret;
 
-console.log('Reading Thingy environment sensors!');
+console.log('Posting environment data to Twitter!');
+console.log('Sensor data will be printed to the terminal.');
+console.log('The data will be sent to Twitter when the button on the Thingy is pressed!');
 
-function onTemperatureData(temperature) {
-    console.log('Temperature sensor: ' + temperature);
+var g_temperature = 0;
+var g_humidity = 0;
+var g_co2 = 0;
+
+var T = new Twit({
+  consumer_key:         'INSERT_KEY',
+  consumer_secret:      'INSERT_KEY',
+  access_token:         'INSERT_KEY',
+  access_token_secret:  'INSERT_KEY',
+  timeout_ms:           60*1000
+})
+
+function onButtonChange(state) {
+  console.log('Button: ' + state);
+
+  if (state == 'Pressed')
+  {
+    led_color = (led_color + 1) % 8;
+    if (led_color == 0)
+    {
+      led_color = 1;
+    }
+
+    var led = {
+      color : led_color,
+      intensity : 20,
+      delay : 1000
+    };
+    this.led_breathe(led, function(error){
+      console.log('LED color change: ' + error);
+    });
+
+    // Check to see which Tweet to tweet
+    if (g_temperature > 30) {
+      T.post('statuses/update', { status: 
+        `#NordicThingy says its hot in here! Temperature is ${g_temperature}` }, 
+        function(err, data, response) {
+        console.log(data)
+      })
+    }
+    else if (g_co2 > 1000) {
+      T.post('statuses/update', { status: 
+        `#NordicThingy air quality warning... eCO2 level is ${g_co2}.` }, 
+        function(err, data, response) {
+        console.log(data)
+      })
+    }
+    else if (g_humidity > 70) {
+      T.post('statuses/update', { status: 
+        `#NordicThingy - Where is all that humidity coming from? Humidity level is ${g_humidity}` }, 
+        function(err, data, response) {
+        console.log(data)
+      })
+    }
+    else {
+      T.post('statuses/update', { status: 
+        `#NordicThingy - The environment readings are within normal limits` }, 
+        function(err, data, response) {
+        console.log(data)
+      })
+    }
+      
+  }
 }
 
-function onPressureData(pressure) {
-    console.log('Pressure sensor: ' + pressure);
+function onTemperatureData(temperature) {
+  console.log('Temperature sensor: ' + temperature);
+  g_temperature = temperature;
 }
 
 function onHumidityData(humidity) {
-    console.log('Humidity sensor: ' + humidity);
+  console.log('Humidity sensor: ' + humidity);
+  g_humidity = humidity;
 }
 
 function onGasData(gas) {
-    console.log('Gas sensor: eCO2 ' + gas.eco2 + ' - TVOC ' + gas.tvoc );
-}
-
-function onColorData(color) {
-    console.log('Color sensor: r ' + color.red +
-                             ' g ' + color.green +
-                             ' b ' + color.blue +
-                             ' c ' + color.clear );
-}
-
-function onButtonChange(state) {
-    if (state == 'Pressed') {
-        if (enabled) {
-            enabled = false;
-            this.temperature_disable(function(error) {
-                console.log('Temperature sensor stopped! ' + ((error) ? error : ''));
-            });
-            this.pressure_disable(function(error) {
-                console.log('Pressure sensor stopped! ' + ((error) ? error : ''));
-            });
-            this.humidity_disable(function(error) {
-                console.log('Humidity sensor stopped! ' + ((error) ? error : ''));
-            });
-            this.color_disable(function(error) {
-                console.log('Color sensor stopped! ' + ((error) ? error : ''));
-            });
-            this.gas_disable(function(error) {
-                console.log('Gas sensor stopped! ' + ((error) ? error : ''));
-            });
-        }
-        else {
-            enabled = true;
-            this.temperature_enable(function(error) {
-                console.log('Temperature sensor started! ' + ((error) ? error : ''));
-            });
-            this.pressure_enable(function(error) {
-                console.log('Pressure sensor started! ' + ((error) ? error : ''));
-            });
-            this.humidity_enable(function(error) {
-                console.log('Humidity sensor started! ' + ((error) ? error : ''));
-            });
-            this.color_enable(function(error) {
-                console.log('Color sensor started! ' + ((error) ? error : ''));
-            });
-            this.gas_enable(function(error) {
-                console.log('Gas sensor started! ' + ((error) ? error : ''));
-            });
-        }
-    }
+  console.log('Gas sensor: eCO2 ' + gas.eco2 + ' - TVOC ' + gas.tvoc );
+  g_co2 = gas.eco2;
 }
 
 function onDiscover(thingy) {
@@ -106,39 +129,21 @@ function onDiscover(thingy) {
   });
 
   thingy.connectAndSetUp(function(error) {
-    console.log('Connected! ' + error ? error : '');
+    console.log('Connected! ' + error);
 
     thingy.on('temperatureNotif', onTemperatureData);
-    // thingy.on('pressureNotif', onPressureData);
-    // thingy.on('humidityNotif', onHumidityData);
-    // thingy.on('gasNotif', onGasData);
-    // thingy.on('colorNotif', onColorData);
+    thingy.on('humidityNotif', onHumidityData);
+    thingy.on('gasNotif', onGasData);
     thingy.on('buttonNotif', onButtonChange);
-
-    console.log(thingy);
-
-    // let x = {
-    //     'temperature': thingy.on('temperatureNotif', onTemperatureData)
-    // }
 
     thingy.temperature_interval_set(1000, function(error) {
         if (error) {
             console.log('Temperature sensor configure! ' + error);
         }
     });
-    thingy.pressure_interval_set(1000, function(error) {
-        if (error) {
-            console.log('Pressure sensor configure! ' + error);
-        }
-    });
     thingy.humidity_interval_set(1000, function(error) {
         if (error) {
             console.log('Humidity sensor configure! ' + error);
-        }
-    });
-    thingy.color_interval_set(1000, function(error) {
-        if (error) {
-            console.log('Color sensor configure! ' + error);
         }
     });
     thingy.gas_mode_set(1, function(error) {
@@ -147,27 +152,28 @@ function onDiscover(thingy) {
         }
     });
 
-    enabled = true;
-
     thingy.temperature_enable(function(error) {
         console.log('Temperature sensor started! ' + ((error) ? error : ''));
     });
-    thingy.pressure_enable(function(error) {
-        console.log('Pressure sensor started! ' + ((error) ? error : ''));
-    });
     thingy.humidity_enable(function(error) {
         console.log('Humidity sensor started! ' + ((error) ? error : ''));
-    });
-    thingy.color_enable(function(error) {
-        console.log('Color sensor started! ' + ((error) ? error : ''));
     });
     thingy.gas_enable(function(error) {
         console.log('Gas sensor started! ' + ((error) ? error : ''));
     });
     thingy.button_enable(function(error) {
-        console.log('Button started! ' + ((error) ? error : ''));
+      console.log('Button enabled! ' + error);
     });
   });
+}
+
+if (T.config.consumer_key == 'INSERT_KEY' ||
+    T.config.consumer_secret == 'INSERT_KEY' ||
+    T.config.access_token == 'INSERT_KEY' ||
+    T.config.access_token_secret == 'INSERT_KEY') {
+    console.log("ERROR: Please specify Twitter Consumer Key, Consumer Secret, Access Token, ");
+    console.log("       and Access Token Secret in this file before running the example.");
+    process.exit(1);
 }
 
 Thingy.discover(onDiscover);

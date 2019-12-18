@@ -1,0 +1,29 @@
+/* @import "./node_modules/react-vis/dist/style"; */
+
+.card-env{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    word-wrap: break-word;
+    background-color: #fff;
+    background-clip: border-box;
+    border: 1px solid rgba(0,0,0,.125);
+    border-radius: .25rem;
+    margin-top: 10px !important;
+    margin-bottom: 10px !important;
+    margin-left: 10px !important;
+    margin-right: 10px !important; 
+}
+
+.row{
+    margin-top: 10px !important;
+    margin-left: 10px !important;
+    margin-right: 10px !important; 
+    margin-bottom: 10px !important;
+}
+
+/* .borders{
+    border: 2px solid #000;
+    border-radius: 3px;
+} */

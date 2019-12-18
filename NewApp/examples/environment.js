@@ -28,26 +28,48 @@
   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
+
+var express = require("express");
+var app = express();
+var cors = require('cors')
+
+app.use(cors());
+app.options('*', cors());
+
 var Thingy = require('../index');
 var enabled;
 
 console.log('Reading Thingy environment sensors!');
 
+let x = {
+    'temp':0,
+    //'tempTime': Date.now(),
+    'pres':0,
+    'humi':0,
+    'eco2':0,
+    'tvoc':0
+}
+
 function onTemperatureData(temperature) {
     console.log('Temperature sensor: ' + temperature);
+    x.temp = temperature;
+    console.log(x);
 }
 
 function onPressureData(pressure) {
     console.log('Pressure sensor: ' + pressure);
+    x.pres = pressure;
 }
 
 function onHumidityData(humidity) {
     console.log('Humidity sensor: ' + humidity);
+    x.humi = humidity;
 }
 
 function onGasData(gas) {
     console.log('Gas sensor: eCO2 ' + gas.eco2 + ' - TVOC ' + gas.tvoc );
+    x.eco2 = gas.eco2;
+    x.tvoc = gas.tvoc;
 }
 
 function onColorData(color) {
@@ -109,34 +131,29 @@ function onDiscover(thingy) {
     console.log('Connected! ' + error ? error : '');
 
     thingy.on('temperatureNotif', onTemperatureData);
-    // thingy.on('pressureNotif', onPressureData);
-    // thingy.on('humidityNotif', onHumidityData);
-    // thingy.on('gasNotif', onGasData);
-    // thingy.on('colorNotif', onColorData);
+    thingy.on('pressureNotif', onPressureData);
+    thingy.on('humidityNotif', onHumidityData);
+    thingy.on('gasNotif', onGasData);
+    thingy.on('colorNotif', onColorData);
     thingy.on('buttonNotif', onButtonChange);
 
-    console.log(thingy);
-
-    // let x = {
-    //     'temperature': thingy.on('temperatureNotif', onTemperatureData)
-    // }
-
-    thingy.temperature_interval_set(1000, function(error) {
+    
+    thingy.temperature_interval_set(10000, function(error) {
         if (error) {
             console.log('Temperature sensor configure! ' + error);
         }
     });
-    thingy.pressure_interval_set(1000, function(error) {
+    thingy.pressure_interval_set(10000, function(error) {
         if (error) {
             console.log('Pressure sensor configure! ' + error);
         }
     });
-    thingy.humidity_interval_set(1000, function(error) {
+    thingy.humidity_interval_set(10000, function(error) {
         if (error) {
             console.log('Humidity sensor configure! ' + error);
         }
     });
-    thingy.color_interval_set(1000, function(error) {
+    thingy.color_interval_set(10000, function(error) {
         if (error) {
             console.log('Color sensor configure! ' + error);
         }
@@ -169,5 +186,11 @@ function onDiscover(thingy) {
     });
   });
 }
+app.get("/", function(req, res) {
+    res.send(x);
+});
+app.listen(3002, function() {
+    console.log("listening on port 3002!");
+});
 
 Thingy.discover(onDiscover);

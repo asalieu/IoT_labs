@@ -1,53 +1,60 @@
-/*
-  Copyright (c) 2010 - 2017, Nordic Semiconductor ASA
-  All rights reserved.
-  Redistribution and use in source and binary forms, with or without modification,
-  are permitted provided that the following conditions are met:
-  1. Redistributions of source code must retain the above copyright notice, this
-     list of conditions and the following disclaimer.
-  2. Redistributions in binary form, except as embedded into a Nordic
-     Semiconductor ASA integrated circuit in a product or a software update for
-     such product, must reproduce the above copyright notice, this list of
-     conditions and the following disclaimer in the documentation and/or other
-     materials provided with the distribution.
-  3. Neither the name of Nordic Semiconductor ASA nor the names of its
-     contributors may be used to endorse or promote products derived from this
-     software without specific prior written permission.
-  4. This software, with or without modification, must only be used with a
-     Nordic Semiconductor ASA integrated circuit.
-  5. Any software provided in binary form under this license must not be reverse
-     engineered, decompiled, modified and/or disassembled.
-  THIS SOFTWARE IS PROVIDED BY NORDIC SEMICONDUCTOR ASA "AS IS" AND ANY EXPRESS
-  OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-  OF MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
-  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-  GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-  OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
- 
 var Thingy = require('../index');
+const Hs100Api = require('hs100-api'); 
+
+var last =false;
 var enabled;
 
 console.log('Reading Thingy environment sensors!');
 
+let x = {
+    'temp':0,
+    'pres':0,
+    'humi':0,
+    'eco2':0,
+    'tvoc':0
+}
+
 function onTemperatureData(temperature) {
     console.log('Temperature sensor: ' + temperature);
+    x.temp = temperature;
+    console.log(x);
+    
+    if(temperature<22)
+     {
+      console.log('Temperature is less  :' + temperature)
+
+		
+     }
+
+    else if(temperature>22)
+     {
+      console.log('Temperature is above :' + temperature)
+const client = new Hs100Api.Client(); 
+	const lightplug = client.getPlug({host: '192.168.230.203'}); 
+	lightplug.getInfo().then(console.log);
+        last=!last; // Makes sure the plug is found.
+ 	lightplug.setPowerState(last); 
+	
+	
+     }
+
 }
 
 function onPressureData(pressure) {
     console.log('Pressure sensor: ' + pressure);
+    x.pres = pressure;
+
 }
 
 function onHumidityData(humidity) {
     console.log('Humidity sensor: ' + humidity);
+    x.humi = humidity;
 }
 
 function onGasData(gas) {
     console.log('Gas sensor: eCO2 ' + gas.eco2 + ' - TVOC ' + gas.tvoc );
+    x.eco2 = gas.eco2;
+    x.tvoc = gas.tvoc;
 }
 
 function onColorData(color) {
@@ -109,34 +116,29 @@ function onDiscover(thingy) {
     console.log('Connected! ' + error ? error : '');
 
     thingy.on('temperatureNotif', onTemperatureData);
-    // thingy.on('pressureNotif', onPressureData);
-    // thingy.on('humidityNotif', onHumidityData);
-    // thingy.on('gasNotif', onGasData);
-    // thingy.on('colorNotif', onColorData);
+    thingy.on('pressureNotif', onPressureData);
+    thingy.on('humidityNotif', onHumidityData);
+    thingy.on('gasNotif', onGasData);
+    thingy.on('colorNotif', onColorData);
     thingy.on('buttonNotif', onButtonChange);
 
-    console.log(thingy);
-
-    // let x = {
-    //     'temperature': thingy.on('temperatureNotif', onTemperatureData)
-    // }
-
-    thingy.temperature_interval_set(1000, function(error) {
+    
+    thingy.temperature_interval_set(10000, function(error) {
         if (error) {
             console.log('Temperature sensor configure! ' + error);
         }
     });
-    thingy.pressure_interval_set(1000, function(error) {
+    thingy.pressure_interval_set(10000, function(error) {
         if (error) {
             console.log('Pressure sensor configure! ' + error);
         }
     });
-    thingy.humidity_interval_set(1000, function(error) {
+    thingy.humidity_interval_set(10000, function(error) {
         if (error) {
             console.log('Humidity sensor configure! ' + error);
         }
     });
-    thingy.color_interval_set(1000, function(error) {
+    thingy.color_interval_set(10000, function(error) {
         if (error) {
             console.log('Color sensor configure! ' + error);
         }
@@ -169,5 +171,4 @@ function onDiscover(thingy) {
     });
   });
 }
-
 Thingy.discover(onDiscover);
